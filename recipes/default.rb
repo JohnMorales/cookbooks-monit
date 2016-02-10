@@ -1,9 +1,12 @@
-package "pam-devel" do
-  action :install
+%w[ pam-devel make autoconf automake gcc file openssl-devel tar upstart ].each do |pkg|
+  package pkg do
+    action :install
+  end
 end
+
 execute "install monit from source" do
   command <<CMD
-  [ -d monit-#{node[:monit][:version]} ] || (curl -LO #{node[:monit][:release_url]}; tar -xvf monit-#{node[:monit][:version]})
+  [ -d monit-#{node[:monit][:version]} ] || (curl -LO #{node[:monit][:release_url]}; tar -xvf #{File.basename(node[:monit][:release_url])})
   cd monit-#{node[:monit][:version]}
   ./configure
   make
@@ -24,4 +27,9 @@ end
 template "/etc/init/monit.conf" do
   source "init.erb"
   mode 0644
+end
+
+execute "start monit" do
+  command "/sbin/start monit"
+  not_if "/sbin/status monit &>/dev/null"
 end
